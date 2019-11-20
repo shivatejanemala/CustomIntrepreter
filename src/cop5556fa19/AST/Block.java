@@ -13,6 +13,10 @@ public class Block extends Stat {
 		this.stats = stats;
 	}
 
+	public List<Stat> getStats() {
+		return stats;
+	}
+
 	@Override
 	public String toString() {
 		return "Block [stats=" + stats +  "]";

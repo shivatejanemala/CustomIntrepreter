@@ -11,7 +11,10 @@ public class Chunk extends ASTNode {
 	public int getNumLocals() {
 		return numLocals;
 	}
-
+	
+	public Block getBlock() {
+		return block;
+	}
 
 	public void setNumLocals(int numLocals) {
 		this.numLocals = numLocals;

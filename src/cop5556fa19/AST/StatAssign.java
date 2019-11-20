@@ -11,6 +11,14 @@ public class StatAssign extends Stat {
 	
 	
 
+	public List<Exp> getVarList() {
+		return varList;
+	}
+
+	public List<Exp> getExpList() {
+		return expList;
+	}
+
 	public StatAssign(Token firstToken, List<Exp> varList, List<Exp> expList) {
 		super(firstToken);
 		this.varList = varList;

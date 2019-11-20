@@ -10,6 +10,10 @@ public class ExpInt extends Exp {
 
 
 	
+	public int getV() {
+		return v;
+	}
+
 	public ExpInt(Token first) {
 		super(first);
 		this.v = first.getIntVal();

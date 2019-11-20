@@ -14,6 +14,10 @@ public class RetStat extends Stat {
 		this.el = el;
 	}
 
+	public List<Exp> getEl() {
+		return el;
+	}
+
 	@Override
 	public String toString() {
 		return "RetStat [el=" + el +  "]";

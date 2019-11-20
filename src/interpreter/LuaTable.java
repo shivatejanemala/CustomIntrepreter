@@ -32,7 +32,7 @@ public class LuaTable extends LuaValue{
 	
 	
 
-	public LuaTable(LuaValue[] array, Map<LuaValue, LuaValue> map, int arraySize) {
+	public LuaTable(LuaValue[] array, Map<LuaValue, LuaValue> map, int arraySize) {//map for variable and value . array for variable storek
 		super();
 		this.array = array;
 		this.map = map;
