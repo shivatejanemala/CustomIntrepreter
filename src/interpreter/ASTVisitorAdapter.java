@@ -474,6 +474,9 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 					}
 					value = new LuaInt(i+1);
 				}
+				else {
+					throw new TypeException("Unknown LuaValue found in Hash Operator");
+				}
 				break;
 			}
 			case BIT_XOR:{
@@ -486,9 +489,12 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 				break;
 			}
 			case OP_MINUS:{
-				if(expValue instanceof LuaInt) {
-					value = new LuaInt(-((LuaInt)expValue).v);
+				if(expValue instanceof LuaInt || expValue instanceof LuaString) {
+					List<LuaValue> valueList = new ArrayList<>();
+					valueList.add(expValue);
+					expValue = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(valueList).get(0);
 				}
+				value = new LuaInt(((LuaInt)expValue).v);
 				break;
 			}
 		}

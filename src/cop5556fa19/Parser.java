@@ -259,7 +259,9 @@ private Exp andExp() throws Exception{
 		}else if(isKind(NAME)) {
 			e0 = new ExpName(t);
 			match(NAME);
-			e0 = prefixTailexp(e0);
+			while(isKind(DOT) || isKind(LPAREN) || isKind(COLON) || isKind(LSQUARE)) {
+				e0 = prefixTailexp(e0);
+			}
 		}
 		else if(isKind(LPAREN)) {
 			match(LPAREN);
