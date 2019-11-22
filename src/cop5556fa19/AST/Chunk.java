@@ -1,13 +1,25 @@
 package cop5556fa19.AST;
 
+import java.util.List;
+
 import cop5556fa19.Token;
+import interpreter.StaticAnalysis;
 
 public class Chunk extends ASTNode {
 	
 	
 	public final Block block;
 	int numLocals;
+	SymbolTable symbolTable;
 	
+	public SymbolTable getSymbolTable() {
+		return symbolTable;
+	}
+
+	public void setSymbolTable(SymbolTable symbolTable) {
+		this.symbolTable = symbolTable;
+	}
+
 	public int getNumLocals() {
 		return numLocals;
 	}
@@ -65,5 +77,7 @@ public class Chunk extends ASTNode {
 	public Object visit(ASTVisitor v, Object arg) throws Exception {
 		return v.visitChunk(this,arg);
 	}
+	
+	
 
 }

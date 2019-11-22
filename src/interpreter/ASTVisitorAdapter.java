@@ -51,17 +51,25 @@ import cop5556fa19.AST.StatLocalAssign;
 import cop5556fa19.AST.StatLocalFunc;
 import cop5556fa19.AST.StatRepeat;
 import cop5556fa19.AST.StatWhile;
+import cop5556fa19.AST.SymbolTable;
 
 public abstract class ASTVisitorAdapter implements ASTVisitor {
 	
-	@SuppressWarnings("serial")
+	/*@SuppressWarnings("serial")
 	public static class StaticSemanticException extends Exception{
 		
 			public StaticSemanticException(Token first, String msg) {
 				super(first.line + ":" + first.pos + " " + msg);
 			}
-		}
+		}*/
 	
+	@SuppressWarnings("serial")
+	public static class GotoException extends Exception{
+		
+			public GotoException(String msg) {
+				super(msg);
+			}
+		}
 	
 	@SuppressWarnings("serial")
 	public
@@ -77,11 +85,18 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 		
 	}
 	
+	SymbolTable symbolTable;
+	boolean gotoRun = false;
+	StatLabel statLabel;
+	boolean loopsFound=false;
+	int blockNo=0;
+	
 	public abstract List<LuaValue> load(Reader r) throws Exception;
 
 	@Override
 	public Object visitExpNil(ExpNil expNil, Object arg) {
-		throw new UnsupportedOperationException();
+		//throw new UnsupportedOperationException();
+		return  LuaNil.nil;
 	}
 
 	@Override
@@ -95,119 +110,278 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	Kind op = expBin.op;
 	switch(op) {
 		case REL_GT:{
-			if(!(lhs instanceof LuaInt && rhs instanceof LuaInt)) {
+			/*if(!(lhs instanceof LuaInt && rhs instanceof LuaInt)) {
 				throw new StaticSemanticException(expBin.firstToken, "LHS and RHS are not comparable");
+			}*/
+			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
+				if(((LuaInt)lhs).v > ((LuaInt)rhs).v) {
+					value = new LuaBoolean(true);
+				}
+				else {
+					value = new LuaBoolean(false);
+				}
 			}
-			if(((LuaInt)lhs).v > ((LuaInt)rhs).v) {
-				value = new LuaBoolean(true);
-			}
-			else {
-				value = new LuaBoolean(false);
+			else if(lhs instanceof LuaString && rhs instanceof LuaString) {
+				if( (((LuaString)lhs).value).compareTo(((LuaString)rhs).value)> 0 ) {
+					value = new LuaBoolean(true);
+				}
+				else {
+					value = new LuaBoolean(false);
+				}
+			}else {
+				throw new TypeException("Wrong types being Compared");
 			}
 			break;
 		}
 		case REL_LT:{
-			if(!(lhs instanceof LuaInt && rhs instanceof LuaInt)) {
+			/*if(!(lhs instanceof LuaInt && rhs instanceof LuaInt)) {
 				throw new StaticSemanticException(expBin.firstToken, "LHS and RHS are not comparable");
-			}
+			}*/
+			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 			if(((LuaInt)lhs).v < ((LuaInt)rhs).v) {
 				value = new LuaBoolean(true);
 			}
 			else {
 				value = new LuaBoolean(false);
 			}
+			}
+			else if(lhs instanceof LuaString && rhs instanceof LuaString) {
+				if( (((LuaString)lhs).value).compareTo(((LuaString)rhs).value) < 0 ) {
+					value = new LuaBoolean(true);
+				}
+				else {
+					value = new LuaBoolean(false);
+				}
+			}
 			break;
 		}
 		case REL_EQEQ:{
 
-			if(!(lhs instanceof LuaInt && rhs instanceof LuaInt)) {
+			/*if(!(lhs instanceof LuaInt && rhs instanceof LuaInt)) {
 				throw new StaticSemanticException(expBin.firstToken, "LHS and RHS are not comparable");
-			}
+			}*/
+			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 			if(((LuaInt)lhs).v == ((LuaInt)rhs).v) {
 				value = new LuaBoolean(true);
 			}
 			else {
 				value = new LuaBoolean(false);
 			}
+			}
+			else if(lhs instanceof LuaString && rhs instanceof LuaString) {
+				if( (((LuaString)lhs).value).compareTo(((LuaString)rhs).value) == 0 ) {
+					value = new LuaBoolean(true);
+				}
+				else {
+					value = new LuaBoolean(false);
+				}
+			}
 		break;
 		}
 		case OP_PLUS:{
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 				value = new LuaInt(((LuaInt)lhs).v+((LuaInt)rhs).v);
-			}}break;
+			}
+			if(lhs instanceof LuaString || rhs instanceof LuaString) {
+			List<LuaValue> lhsList = new ArrayList<>();
+			List<LuaValue> rhsList = new ArrayList<>();
+			lhsList.add(lhs);
+			rhsList.add(rhs);
+			lhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(lhsList).get(0);
+			rhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(rhsList).get(0);
+			value = new LuaInt(((LuaInt)lhs).v+((LuaInt)rhs).v);
+			}
+			break;
+			}
 		case OP_MINUS:{
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 				value = new LuaInt(((LuaInt)lhs).v-((LuaInt)rhs).v);
-			}	
+			}
+			if(lhs instanceof LuaString || rhs instanceof LuaString) {
+			List<LuaValue> lhsList = new ArrayList<>();
+			List<LuaValue> rhsList = new ArrayList<>();
+			lhsList.add(lhs);
+			rhsList.add(rhs);
+			lhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(lhsList).get(0);
+			rhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(rhsList).get(0);
+			value = new LuaInt(((LuaInt)lhs).v-((LuaInt)rhs).v);
+			}
 			break;
-		}
+			}
 		case OP_TIMES:{
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 				value = new LuaInt(((LuaInt)lhs).v*((LuaInt)rhs).v);
 			}
+			if(lhs instanceof LuaString || rhs instanceof LuaString) {
+			List<LuaValue> lhsList = new ArrayList<>();
+			List<LuaValue> rhsList = new ArrayList<>();
+			lhsList.add(lhs);
+			rhsList.add(rhs);
+			lhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(lhsList).get(0);
+			rhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(rhsList).get(0);
+			value = new LuaInt(((LuaInt)lhs).v*((LuaInt)rhs).v);
+			}
 			break;
-		}
+			}
 		case OP_DIV:{
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 				value = new LuaInt(((LuaInt)lhs).v/((LuaInt)rhs).v);
-			}break;	
-		}
+			}
+			if(lhs instanceof LuaString || rhs instanceof LuaString) {
+			List<LuaValue> lhsList = new ArrayList<>();
+			List<LuaValue> rhsList = new ArrayList<>();
+			lhsList.add(lhs);
+			rhsList.add(rhs);
+			lhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(lhsList).get(0);
+			rhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(rhsList).get(0);
+			value = new LuaInt(((LuaInt)lhs).v/((LuaInt)rhs).v);
+			}
+			break;
+			}
 		case OP_MOD:{
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 				value = new LuaInt(((LuaInt)lhs).v%((LuaInt)rhs).v);
-			}break;	
-		}
-		case OP_POW:{
-			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
-				value = new LuaInt((int)Math.pow((((LuaInt)lhs).v),(((LuaInt)rhs).v)));
+			}
+			if(lhs instanceof LuaString || rhs instanceof LuaString) {
+			List<LuaValue> lhsList = new ArrayList<>();
+			List<LuaValue> rhsList = new ArrayList<>();
+			lhsList.add(lhs);
+			rhsList.add(rhs);
+			lhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(lhsList).get(0);
+			rhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(rhsList).get(0);
+			value = new LuaInt(((LuaInt)lhs).v%((LuaInt)rhs).v);
 			}
 			break;
-		}
+			}
+		case OP_POW:{
+			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
+				value = new LuaInt((int)Math.pow(((LuaInt)lhs).v, ((LuaInt)rhs).v));
+			}
+			if(lhs instanceof LuaString || rhs instanceof LuaString) {
+			List<LuaValue> lhsList = new ArrayList<>();
+			List<LuaValue> rhsList = new ArrayList<>();
+			lhsList.add(lhs);
+			rhsList.add(rhs);
+			lhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(lhsList).get(0);
+			rhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(rhsList).get(0);
+			value = new LuaInt((int)Math.pow(((LuaInt)lhs).v, ((LuaInt)rhs).v));
+			}
+			break;
+			}
 		case OP_DIVDIV:{
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
-				
-		}
+				value = new LuaInt(Math.floorDiv(((LuaInt)lhs).v,((LuaInt)rhs).v));
+			}
+			if(lhs instanceof LuaString || rhs instanceof LuaString) {
+			List<LuaValue> lhsList = new ArrayList<>();
+			List<LuaValue> rhsList = new ArrayList<>();
+			lhsList.add(lhs);
+			rhsList.add(rhs);
+			lhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(lhsList).get(0);
+			rhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(rhsList).get(0);
+			value = new LuaInt(Math.floorDiv(((LuaInt)lhs).v,((LuaInt)rhs).v));
+			}
 			break;
-		}
+			}
 		case DOTDOT:{
 			if(lhs instanceof LuaString && rhs instanceof LuaString) {
 				value = new LuaString(((LuaString)lhs).value + ((LuaString)rhs).value);
 			}
+			if(lhs instanceof LuaInt) {
+				lhs = new LuaString(Integer.toString(((LuaInt)lhs).v));
+			}
+			if(rhs instanceof LuaInt) {
+				rhs = new LuaString(Integer.toString(((LuaInt)rhs).v));
+			}
+			value = new LuaString(((LuaString)lhs).value + ((LuaString)rhs).value);
 			break;
 		}
-		case BIT_SHIFTL:{
+		case BIT_SHIFTL:{ //LuaString too
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 				value = new LuaInt(((LuaInt)lhs).v << ((LuaInt)rhs).v);
 			}
+			if(lhs instanceof LuaString || rhs instanceof LuaString) {
+				List<LuaValue> lhsList = new ArrayList<>();
+				List<LuaValue> rhsList = new ArrayList<>();
+				lhsList.add(lhs);
+				rhsList.add(rhs);
+				lhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(lhsList).get(0);
+				rhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(rhsList).get(0);
+				value = new LuaInt(((LuaInt)lhs).v << ((LuaInt)rhs).v);
+				}
 			break;
 		}
 		case BIT_SHIFTR:{
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 				value = new LuaInt(((LuaInt)lhs).v >> ((LuaInt)rhs).v);
 			}
+			if(lhs instanceof LuaString || rhs instanceof LuaString) {
+				List<LuaValue> lhsList = new ArrayList<>();
+				List<LuaValue> rhsList = new ArrayList<>();
+				lhsList.add(lhs);
+				rhsList.add(rhs);
+				lhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(lhsList).get(0);
+				rhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(rhsList).get(0);
+				value = new LuaInt(((LuaInt)lhs).v >> ((LuaInt)rhs).v);
+				}
 			break;
 		}
 		case BIT_AMP:{
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 				value = new LuaInt(((LuaInt)lhs).v & ((LuaInt)rhs).v);
 			}
+			if(lhs instanceof LuaString || rhs instanceof LuaString) {
+				List<LuaValue> lhsList = new ArrayList<>();
+				List<LuaValue> rhsList = new ArrayList<>();
+				lhsList.add(lhs);
+				rhsList.add(rhs);
+				lhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(lhsList).get(0);
+				rhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(rhsList).get(0);
+				value = new LuaInt(((LuaInt)lhs).v & ((LuaInt)rhs).v);
+				}
 			break;
 		}
 		case BIT_XOR:{
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 				value = new LuaInt(((LuaInt)lhs).v^((LuaInt)rhs).v);
 			}
+			if(lhs instanceof LuaString || rhs instanceof LuaString) {
+				List<LuaValue> lhsList = new ArrayList<>();
+				List<LuaValue> rhsList = new ArrayList<>();
+				lhsList.add(lhs);
+				rhsList.add(rhs);
+				lhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(lhsList).get(0);
+				rhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(rhsList).get(0);
+				value = new LuaInt(((LuaInt)lhs).v ^ ((LuaInt)rhs).v);
+				}
 			break;
 		}
 		case BIT_OR:{
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 				value = new LuaInt(((LuaInt)lhs).v|((LuaInt)rhs).v);
 			}
+			if(lhs instanceof LuaString || rhs instanceof LuaString) {
+				List<LuaValue> lhsList = new ArrayList<>();
+				List<LuaValue> rhsList = new ArrayList<>();
+				lhsList.add(lhs);
+				rhsList.add(rhs);
+				lhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(lhsList).get(0);
+				rhs = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(rhsList).get(0);
+				value = new LuaInt(((LuaInt)lhs).v | ((LuaInt)rhs).v);
+				}
 			break;
 		}
 		case REL_GE:{
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 				value = new LuaBoolean(((LuaInt)lhs).v >= ((LuaInt)rhs).v);
+			}
+			else if(lhs instanceof LuaString && rhs instanceof LuaString) {
+				if( (((LuaString)lhs).value).compareTo(((LuaString)rhs).value) > 0 ||  (((LuaString)lhs).value).compareTo(((LuaString)rhs).value) == 0) {
+					value = new LuaBoolean(true);
+				}
+				else {
+					value = new LuaBoolean(false);
+				}
 			}
 			break;
 		}
@@ -215,29 +389,45 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 				value = new LuaBoolean(((LuaInt)lhs).v <= ((LuaInt)rhs).v);
 			}
+			else if(lhs instanceof LuaString && rhs instanceof LuaString) {
+				if( (((LuaString)lhs).value).compareTo(((LuaString)rhs).value) < 0  ||  (((LuaString)lhs).value).compareTo(((LuaString)rhs).value) == 0 ) {
+					value = new LuaBoolean(true);
+				}
+				else {
+					value = new LuaBoolean(false);
+				}
+			}
 			break;
 		}
 		case REL_NOTEQ:{
 			if(lhs instanceof LuaInt && rhs instanceof LuaInt) {
 				value = new LuaBoolean(((LuaInt)lhs).v != ((LuaInt)rhs).v);
 			}
+			else if(lhs instanceof LuaString && rhs instanceof LuaString) {
+				if( (((LuaString)lhs).value).compareTo(((LuaString)rhs).value) != 0 ) {
+					value = new LuaBoolean(true);
+				}
+				else {
+					value = new LuaBoolean(false);
+				}
+			}
 			break;
 		}
 		case KW_and:{
-			if(lhs instanceof LuaNil && (lhs instanceof LuaBoolean && lhs.equals(new LuaBoolean(false)))) {
-				value = lhs;
-			}else {
+			if((rhs instanceof LuaBoolean && (rhs.equals(new LuaBoolean(false)))) || (lhs instanceof LuaNil)) {
 				value = rhs;
 			}
-			break;
+			else {
+				value = rhs;
+			}
 		}
 		case KW_or:{
-			if(!(lhs instanceof LuaNil && (lhs instanceof LuaBoolean && lhs.equals(new LuaBoolean(false))))) {
+			if(!(lhs instanceof LuaNil) && !(rhs instanceof LuaBoolean && (rhs.equals(new LuaBoolean(false))))){
 				value = lhs;
-			}else {
+			}
+			else {
 				value = rhs;
 			}
-			break;
 		}
 	}
 	return value;
@@ -245,7 +435,52 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
 	@Override
 	public Object visitUnExp(ExpUnary unExp, Object arg) throws Exception {
-		throw new UnsupportedOperationException();
+		//throw new UnsupportedOperationException();
+		LuaValue value = null;
+		Kind op = unExp.op;
+		Exp e0 = unExp.e;
+		LuaValue expValue = (expEval(e0,arg).size()>0)?(expEval(e0,arg).get(0)):LuaNil.nil;
+		switch(op) {
+			case KW_not:{
+				if(expValue instanceof LuaNil || expValue instanceof LuaBoolean) {
+					if(expValue.equals(LuaNil.nil)) {
+						value = new LuaBoolean(true);
+					}
+					else {
+						value = new LuaBoolean(!((LuaBoolean)expValue).value);
+					}
+				}
+				else {
+					throw new TypeException("Unexpected LuaValue type found at KW_not");
+				}
+				break;
+			}
+			case OP_HASH:{
+				if(e0 instanceof ExpString) {
+					value = new LuaInt(((ExpString)e0).v.length());
+				}
+				else if(e0 instanceof ExpTable) {
+					value = new LuaInt(((ExpTable)e0).fields.size());
+				}
+				break;
+			}
+			case BIT_XOR:{
+				if(expValue instanceof LuaInt || expValue instanceof LuaString) {
+					List<LuaValue> valueList = new ArrayList<>();
+					valueList.add(expValue);
+					expValue = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(valueList).get(0);
+				}
+				value = new LuaInt(~((LuaInt)expValue).v);
+				break;
+			}
+			case OP_MINUS:{
+				if(expValue instanceof LuaInt) {
+					value = new LuaInt(-((LuaInt)expValue).v);
+				}
+				break;
+			}
+		}
+		return value;
 	}
 
 	@Override
@@ -263,22 +498,32 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	public Object visitExpTable(ExpTable expTableConstr, Object arg) throws Exception {
 		//throw new UnsupportedOperationException();
 		List<Field> fieldList = expTableConstr.fields;
-		LuaValue value = null;
+		LuaValue value = new LuaTable();
 		List<LuaValue> fieldValueList = new ArrayList<LuaValue>();
 		Map<LuaValue,LuaValue> map = new HashMap<>();
 		for(Field f: fieldList) {
 			if(f instanceof FieldExpKey) {
-				map.putAll((Map<LuaValue,LuaValue>)visitFieldExpKey((FieldExpKey)f, arg));
-				
+				List<Object> list = new ArrayList<>();
+				list.add(arg);
+				list.add(value);
+				visitFieldExpKey((FieldExpKey)f, list);				
 			}
 			else if(f instanceof FieldImplicitKey) {
-				fieldValueList.addAll((List<LuaValue>)visitFieldImplicitKey((FieldImplicitKey)f, arg));
+				List<Object> list = new ArrayList<>();
+				list.add(arg);
+				list.add(value);
+			//	fieldValueList.addAll((List<LuaValue>)visitFieldImplicitKey((FieldImplicitKey)f, arg));
+				visitFieldImplicitKey((FieldImplicitKey)f, list);
 			}
 			else if(f instanceof FieldNameKey) {
-				map.putAll((Map<LuaValue,LuaValue>)visitFieldNameKey((FieldNameKey)f, arg));
+				List<Object> list = new ArrayList<>();
+				list.add(arg);
+				list.add(value);
+				visitFieldNameKey((FieldNameKey)f, list);	
+				//map.putAll((Map<LuaValue,LuaValue>)visitFieldNameKey((FieldNameKey)f, arg));
 			}
 		}
-		int fieldSize = (fieldList.size()<LuaTable.DEFAULT_ARRAY_SIZE)? LuaTable.DEFAULT_ARRAY_SIZE : fieldValueList.size();
+		/*int fieldSize = (fieldList.size()<LuaTable.DEFAULT_ARRAY_SIZE)? LuaTable.DEFAULT_ARRAY_SIZE : fieldValueList.size();
 		if(fieldValueList.size()< fieldSize) {
 			int size = fieldValueList.size();
 			for(int i =0; i<(fieldSize-size);i++) {
@@ -291,7 +536,7 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 		}
 		
 		
-		value = new LuaTable(valueArray, map,fieldSize);
+		value = new LuaTable(valueArray, map,fieldSize);*/
 		return value;
 	}
 
@@ -320,43 +565,80 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 		//throw new UnsupportedOperationException();
 		List<LuaValue> valueList = null;
 			List<Stat>statList = block.getStats();
-			for (Stat stat : statList) {
-				valueList = new ArrayList<>();
-				if(stat instanceof StatAssign) {
-					arg = visitStatAssign((StatAssign)stat, arg);
-				}
-				else if(stat instanceof RetStat) {
-					valueList = (List<LuaValue>)visitRetStat((RetStat)stat, arg);
-				}
-				else if(stat instanceof StatDo) {
-					Object a = visitStatDo((StatDo)stat, arg);
-					if(((List<LuaValue>)a).size()!=0) {
-						valueList = ((List<LuaValue>)a);
-						break;
+			int blockNumber = blockNo;
+			try {
+				for (Stat stat : statList) {
+					valueList = new ArrayList<>();
+					if(gotoRunCheck(stat) && stat instanceof StatAssign) {
+						arg = visitStatAssign((StatAssign)stat, arg);
+					}
+					else if(gotoRunCheck(stat) && stat instanceof RetStat) {
+						valueList = (List<LuaValue>)visitRetStat((RetStat)stat, arg);
+					}
+					else if(gotoRunCheck(stat) && stat instanceof StatDo) {
+						Object a = visitStatDo((StatDo)stat, arg);
+						if(((List<LuaValue>)a).size()!=0) {
+							valueList = ((List<LuaValue>)a);
+							break;
+						}
+					}
+					else if(gotoRunCheck(stat) && stat instanceof StatIf) {
+						Object a = visitStatIf((StatIf)stat,arg);
+						if(((List<LuaValue>)a).size()!=0) {
+							valueList = ((List<LuaValue>)a);
+							break;
+						}
+					}
+					else if(gotoRunCheck(stat) && stat instanceof StatWhile) {
+						Object a = visitStatWhile((StatWhile)stat, arg);
+						if(a!=null && ((List<LuaValue>)a).size()!=0) {
+							valueList = ((List<LuaValue>)a);
+							break;
+						}
+						
+					}
+					else if(gotoRunCheck(stat) && stat instanceof StatRepeat) {
+						Object a = visitStatRepeat((StatRepeat)stat, arg);	
+						if(a!=null && ((List<LuaValue>)a).size()!=0) {
+							valueList = ((List<LuaValue>)a);
+							break;
+						}
+						}
+					else if(gotoRunCheck(stat) && stat instanceof StatBreak) {
+						Object a = visitStatBreak((StatBreak)stat,arg);
+					}
+					else if(gotoRunCheck(stat) && stat instanceof StatLabel) {
+						visitLabel((StatLabel)stat, arg);
+					}
+					else if(gotoRunCheck(stat) && stat instanceof StatGoto) {
+						visitStatGoto((StatGoto)stat, arg);
 					}
 				}
-				else if(stat instanceof StatIf) {
-					Object a = visitStatIf((StatIf)stat,arg);
-					if(((List<LuaValue>)a).size()!=0) {
-						valueList = ((List<LuaValue>)a);
-						break;
-					}
-				}
-				else if(stat instanceof StatWhile) {
-					Object a = visitStatWhile((StatWhile)stat, arg);
-					if(((List<LuaValue>)a).size()!=0) {
-						valueList = ((List<LuaValue>)a);
-						break;
-					}
-				}else if(stat instanceof StatBreak) {
-					Object a = visitStatBreak((StatBreak)stat,arg);
-					if(((List<LuaValue>)a).size()!=0) {
-						valueList = ((List<LuaValue>)a);
-						break;
-					}
+				if(gotoRun ) {
+					 throw new StaticSemanticException(block.firstToken, "Couldnot find the proper statement");
 				}
 			}
+			catch(GotoException e) {
+				valueList = (List<LuaValue>)visitBlock(block,arg);
+			}
+			catch(StaticSemanticException e) {
+				if(blockNumber == blockNo) {
+					throw e;
+				}
+				else {
+					valueList = (List<LuaValue>)visitBlock(block,arg);
+				}
+			}
+
 		return valueList;
+	}
+
+	private boolean gotoRunCheck(Stat stat) {
+		// TODO Auto-generated method stub
+		if(gotoRun && !stat.equals(statLabel)) {
+			return false;
+		}
+		return true;
 	}
 
 	@Override
@@ -371,22 +653,26 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
 	@Override
 	public Object visitStatGoto(StatGoto statGoto, Object arg) throws Exception {
-		throw new UnsupportedOperationException();
+
+		gotoRun = true;
+		statLabel = statGoto.label;
+		throw new GotoException("Got goto statement");
 	}
 
 	@Override
 	public Object visitStatDo(StatDo statDo, Object arg) throws Exception {
 		//throw new UnsupportedOperationException();
 		Block block = statDo.b;
+		blockNo+=1;
 		List<LuaValue> valueList = new ArrayList<>();
 		try {
 			Object blockValue = visitBlock(block, arg);
 			valueList = (List<LuaValue>)blockValue;
 		}
 		catch(UnsupportedOperationException ex) {
-			/*if(!((LuaTable)arg).get("break").equals(new LuaBoolean(true))) {
+			if(loopsFound) {
 				throw ex;
-			}*/
+			}
 		}
 		return valueList;
 	}
@@ -397,20 +683,38 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 		List<LuaValue> valueList = null;
 		Exp e = statWhile.e;
 		Block b = statWhile.b;
+		blockNo+=1;
 		try {
-		while(( (expEval(e,arg).size()>0)?(expEval(e,arg).get(0)):LuaNil.nil).equals(new LuaBoolean(true))) {
+		while(( (expEval(e,arg).size()>0)?(expEval(e,arg).get(0)):LuaNil.nil).equals(new LuaBoolean(true)) || ( (expEval(e,arg).size()>0)?(expEval(e,arg).get(0)):LuaNil.nil).equals(new LuaInt(0))) {
+			loopsFound=true;
 			valueList =(List<LuaValue>) visitBlock(b, arg);
 		}
+		loopsFound=false;
 	}
 	catch(UnsupportedOperationException ex) {
-		
+		loopsFound=false;
 	}
 	return valueList;
 	}
 
 	@Override
 	public Object visitStatRepeat(StatRepeat statRepeat, Object arg) throws Exception {
-		throw new UnsupportedOperationException();
+		//throw new UnsupportedOperationException();
+		List<LuaValue> valueList = null;
+		Exp e = statRepeat.e;
+		Block b = statRepeat.b;
+		try {
+		do {
+			loopsFound=true;
+			valueList =(List<LuaValue>) visitBlock(b, arg);	
+		}
+		while(( (expEval(e,arg).size()>0)?(expEval(e,arg).get(0)):LuaNil.nil).equals(new LuaBoolean(true)));
+		loopsFound=false;
+		}
+		catch(UnsupportedOperationException ex) {
+			loopsFound=false;
+		}
+	return valueList;
 	}
 
 	@Override
@@ -418,22 +722,32 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 		
 		List<Exp> es = statIf.es;
 		List<Block> bs = statIf.bs;
+		boolean success = false;
 		List<LuaValue> valueList = new ArrayList<>();
-		for(int i=0;i<es.size();i++) {
-			Exp ifCondition = es.get(i);
-			LuaValue key = expEval(ifCondition,arg).get(0);
-			if(( key instanceof LuaBoolean && ((LuaBoolean)key).value) || (key instanceof LuaInt)) {
-				Block b=null;
-					b = bs.get(i);
-				Object blockValue = visitBlock(b,arg);
-				valueList = (List<LuaValue>)blockValue;
-				break;
+		blockNo+=1;
+		try {
+			for(int i=0;i<es.size();i++) {
+				Exp ifCondition = es.get(i);
+				LuaValue key = expEval(ifCondition,arg).get(0);
+				if(( key instanceof LuaBoolean && ((LuaBoolean)key).value) || (key instanceof LuaInt)) {
+					Block b=null;
+						b = bs.get(i);
+					Object blockValue = visitBlock(b,arg);
+					valueList = (List<LuaValue>)blockValue;
+					success = true;
+					break;
+				}
+				
 			}
-			if(bs.size()-es.size()==1) {
+			if(!success && (bs.size()-es.size()==1)) {
 				Block b = bs.get(bs.size());
 				Object blockValue = visitBlock(b,arg);
 				valueList = (List<LuaValue>)blockValue;
-				break;  
+			}
+		}
+		catch(UnsupportedOperationException e) {
+			if(loopsFound) {
+				throw e;
 			}
 		}
 		//throw new UnsupportedOperationException();
@@ -486,6 +800,7 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	public Object visitChunk(Chunk chunk, Object arg) throws Exception {
 		//throw new UnsupportedOperationException();
 		Block block = chunk.getBlock();
+		symbolTable = chunk.getSymbolTable();
 		List<LuaValue> valueList = null;
 		valueList = (List<LuaValue>)visitBlock(block, arg);
 		//return ((LuaTable)arg).get(new LuaInt(1));
@@ -498,31 +813,57 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 		Exp key = fieldExpKey.key;
 		Exp value = fieldExpKey.value;
 		List<LuaValue> valueList = new ArrayList<>();
-		LuaValue keyValue = (expEval(key, (LuaTable)object).size()>0)?expEval(key, (LuaTable)object).get(0):LuaNil.nil;
-		LuaValue valueValue = (expEval(value, (LuaTable)object).size()>0)?expEval(value, (LuaTable)object).get(0):LuaNil.nil;
+		LuaTable arg = (LuaTable) ((List<Object>)object).get(0);
+		LuaTable f = (LuaTable) ((List<Object>)object).get(1);
+		LuaValue keyValue = null;
+		//LuaValue keyValue = (expEval(key, arg).size()>0)?expEval(key, arg).get(0):LuaNil.nil;
+		if(key instanceof ExpName) {
+				if(expEval(key, arg).get(0).equals(LuaNil.nil)) {
+					keyValue = new LuaString(((ExpName)key).name);
+				}
+				else {
+					keyValue = (expEval(key, arg).size()>0)?expEval(key, arg).get(0):LuaNil.nil;
+				}
+		}else {
+			keyValue = (expEval(key, arg).size()>0)?expEval(key, arg).get(0):LuaNil.nil;
+		}
+		LuaValue valueValue = (expEval(value, arg).size()>0)?expEval(value, arg).get(0):LuaNil.nil;
 		Map<LuaValue,LuaValue> map = new HashMap<>();
-		map.put(keyValue, valueValue);
+		f.put(keyValue, valueValue);
 		return map;
 	}
 
 	@Override
-	public Object visitFieldNameKey(FieldNameKey fieldNameKey, Object arg) throws Exception {
+	public Object visitFieldNameKey(FieldNameKey fieldNameKey, Object object) throws Exception {
 		//throw new UnsupportedOperationException();
 		Map<LuaValue,LuaValue> map = new HashMap<>();
 		Exp exp = fieldNameKey.exp;
 		Name name = fieldNameKey.name;
+		LuaValue nameValue=null;
+		LuaTable arg = (LuaTable) ((List<Object>)object).get(0);
+		LuaTable f = (LuaTable) ((List<Object>)object).get(1);
 		LuaValue expValue = ((List<LuaValue>) expEval(exp, arg)).get(0);
-		LuaValue nameValue = new LuaString(name.name);
-		map.put(nameValue, expValue);
+		if(expEval(new ExpName(name.name), arg).get(0).equals( LuaNil.nil)) {
+		nameValue = new LuaString(name.name); 
+		}
+		else {
+			nameValue = expEval(new ExpName(name.name), arg).get(0);
+		}
+		f.put(nameValue, expValue);
 		return map;
 	}
 	
 	@Override
-	public Object visitFieldImplicitKey(FieldImplicitKey fieldImplicitKey, Object arg) throws Exception {
+	public Object visitFieldImplicitKey(FieldImplicitKey fieldImplicitKey, Object object) throws Exception {
 		//throw new UnsupportedOperationException();
 		List<LuaValue> valueList = new ArrayList<>();
 		Exp ee = fieldImplicitKey.exp;
+		LuaTable arg = (LuaTable) ((List<Object>)object).get(0);
+		LuaTable f = (LuaTable) ((List<Object>)object).get(1);
 		valueList = expEval(ee, arg);
+		for(LuaValue value : valueList) {
+			f.putImplicit(value);
+		}
 		return valueList;
 	}
 
@@ -552,7 +893,7 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 	public Object visitStatAssign(StatAssign statAssign, Object arg) throws Exception {
 		List<Exp>expList = statAssign.getExpList();
 		List<Exp>varList = statAssign.getVarList();
-		if(varList.size()== expList.size()) {
+	//	if(varList.size()== expList.size()) {
 			for(int i=0;i<varList.size();i++) {
 				Exp e = varList.get(i);
 				LuaValue key = variableStore(e,arg);
@@ -566,8 +907,8 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 				};
 			}
 			return arg;
-		}
-		throw new UnsupportedOperationException();
+		//}
+		//throw new UnsupportedOperationException();
 	}
 
 
@@ -607,7 +948,7 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 		}else if(e instanceof ExpTableLookup) {
 			value.add((LuaValue)visitExpTableLookup((ExpTableLookup)e, arg));
 		}else if(e instanceof ExpUnary) {
-			value.add((LuaValue)visitExpTableLookup((ExpTableLookup)e, arg));
+			value.add((LuaValue)visitUnExp((ExpUnary)e, arg));
 		}
 		return value;
 	}
@@ -639,7 +980,17 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 		Exp table = expTableLookup.table;
 		Exp key = expTableLookup.key;
 		LuaTable tableValue =(LuaTable)( (expEval(table, arg).size()>0)?expEval(table, arg).get(0):LuaNil.nil);
-		LuaValue keyValue = expEval(key, arg).get(0);
+		LuaValue keyValue = null;
+		if(key instanceof ExpName) {
+				if(expEval(key, arg).get(0).equals(LuaNil.nil)) {
+						keyValue = new LuaString(((ExpName)key).name);
+				}
+				else {
+					keyValue = expEval(key, arg).get(0);
+				}
+		}else {
+			keyValue = expEval(key, arg).get(0);
+		}
 		value = tableValue.get(keyValue);
 		return value;
 	}
@@ -671,7 +1022,11 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 
 	@Override
 	public Object visitLabel(StatLabel statLabel, Object ar) {
-		throw new UnsupportedOperationException();
+		//throw new UnsupportedOperationException();
+		if(gotoRun) {
+			gotoRun = false;
+		}
+		return null;
 	}
 
 	@Override
