@@ -456,11 +456,23 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 				break;
 			}
 			case OP_HASH:{
-				if(e0 instanceof ExpString) {
-					value = new LuaInt(((ExpString)e0).v.length());
+				if(expValue instanceof LuaString) {
+					value = new LuaInt(((LuaString)expValue).value.length());
 				}
-				else if(e0 instanceof ExpTable) {
-					value = new LuaInt(((ExpTable)e0).fields.size());
+				else if(expValue instanceof LuaTable) {
+					LuaValue[] valueArray = ((LuaTable)expValue).array;
+					int i=0;
+					for(i =0; i<valueArray.length;i++) {
+						if(i==valueArray.length - 1) {
+							if(!valueArray[i].equals(LuaNil.nil)) {
+								break;
+							}
+						}
+						else if(!(valueArray[i].equals(LuaNil.nil)) && (valueArray[i+1].equals(LuaNil.nil))) {
+							break;
+						}
+					}
+					value = new LuaInt(i+1);
 				}
 				break;
 			}

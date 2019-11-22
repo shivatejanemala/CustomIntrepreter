@@ -602,7 +602,7 @@ import interpreter.StaticSemanticException;
 		
 		@Test
 		void binary2() throws Exception{
-			String input = "if false and false then w=10 end if true and false then x=10 end if true and true then y=10 end if false and true then z=10 end return w,x,y,z";
+			String input = "x= {1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1,2,3,1} return #x";
 			show(input);
 			List<LuaValue> ret = interpret(input);
 			show(ret);
