@@ -175,7 +175,7 @@ import interpreter.StaticSemanticException;
 			assertEquals(expected, ret);
 		}
 		
-		//@Test 
+		@Test 
 		void if2() throws Exception {
 			String input = "if x then x=3 elseif y then y=4 elseif true then x=10 else y=11 end return x,y";
 			show(input);
@@ -187,7 +187,7 @@ import interpreter.StaticSemanticException;
 			assertEquals(expected, ret);
 		}
 		
-		//@Test 
+		@Test 
 		void fail_ifgoto() throws Exception {
 			String input = "y = 0 if x then x=3 elseif y then y=4 goto label1 elseif true then ::label1:: x=10  else y=11 end z = 12 y=20 return x,y,z";
 			show(input);
@@ -196,7 +196,7 @@ import interpreter.StaticSemanticException;
 			});		
 		}
 		
-		//@Test 
+		@Test 
 		void if3() throws Exception {
 			String input = "if x then x=3 elseif y then y=4 elseif true then x=10 goto label1 else y=11 end z = 12 ::label1:: y=20 return x,y,z";
 			show(input);
@@ -209,7 +209,7 @@ import interpreter.StaticSemanticException;
 			assertEquals(expected, ret);
 		}
 		
-		//@Test 
+		@Test 
 		void goto0() throws Exception {
 			String input = "if x then x=3 elseif y then y=4 elseif true then do x=10 goto label1 end else y=11 end z = 12 ::label1:: y=20 return x,y,z";
 			show(input);
@@ -222,7 +222,7 @@ import interpreter.StaticSemanticException;
 			assertEquals(expected, ret);
 		}
 		
-		//@Test 
+		@Test 
 		void gotoscopedlabels1() throws Exception {
 			String input = "x = 0 "
 					+ "\nif x "
@@ -244,7 +244,7 @@ import interpreter.StaticSemanticException;
 			assertEquals(expected, ret);
 		}
 		
-		//@Test 
+		@Test 
 		void fail_gotoscopedlabels() throws Exception { //missing label
 			String input = "if x "
 					+ "\n  then x=3 "
@@ -263,7 +263,7 @@ import interpreter.StaticSemanticException;
 			});		
 		}
 		
-		//@Test 
+		@Test 
 		void gotoscopedlabels2() throws Exception { 
 			String input = "do x=1 do y=2 do a = 4 goto label1 b=5 ::label1:: z=3 end ::label1:: w=6 end end return w,x,y,z,a,b";
 			show(input);
@@ -274,7 +274,7 @@ import interpreter.StaticSemanticException;
 			assertEquals(expected, ret);			
 		}
 		
-		//@Test 
+		@Test 
 		void fail_gotoscopedlabels2() throws Exception { 
 			String input = "do x=1 do y=2 do a = 4 goto label1 b=5  z=3 end ::label1:: w=6 end end return w,x,y,z,a,b";
 			show(input);
@@ -331,7 +331,7 @@ import interpreter.StaticSemanticException;
 		}
 		
 		
-		//@Test
+		@Test
 		void whilebreak1() throws Exception {
 			String input = "i = 10  "
 					+ "\nsum = 0 "
@@ -451,7 +451,7 @@ import interpreter.StaticSemanticException;
 		
 
 		
-		//@Test
+		@Test
 		void gotoTest0prep() throws Exception {
 			String input = " x=2"
 					+ "\n y=3 "
@@ -466,13 +466,13 @@ import interpreter.StaticSemanticException;
 			assertEquals(expected,ret);
 		}
 		
-		//@Test
+		@Test
 		void gotoTest0() throws Exception {
 			String input = " x=2"
 					+ "\n y=3 goto label1 "
 					+ "\n y=4 "
 					+ "\n ::label1:: "
-					+ "\n return y"
+					+ "\n z=0 return y;"
 					;
 			show(input);
 			List<LuaValue> ret = interpret(input);
@@ -481,7 +481,7 @@ import interpreter.StaticSemanticException;
 			assertEquals(expected,ret);
 		}
 		
-		//@Test
+		@Test
 		void gotoTest1() throws Exception{
 			String input = "a=1; b=2; do a=3 goto label1 end b=3 ::label1:: a=4 return a,b";
 			show(input);
@@ -491,7 +491,7 @@ import interpreter.StaticSemanticException;
 			assertEquals(expected,ret);
 		}
 		
-		////@Test
+		@Test
 		void gotoTest2() throws Exception{
 			String input = "a=0; do a=1 do a=2 goto label1  a=3 end a=4 end a=5 ::label1:: b=6 return a,b";
 			show(input);
@@ -545,5 +545,90 @@ import interpreter.StaticSemanticException;
 			assertEquals(expectedList,ret);
 		}
 		
+		@Test
+		void table6() throws Exception{
+			String input = "x = {a=4,b=5,[2]=8} return x[a],x[b],x[2]";
+			show(input);
+			List<LuaValue> ret = interpret(input);
+			show(ret);
+			List<LuaValue> expectedList = new ArrayList<>();
+			LuaValue expected = new LuaInt(4);
+			LuaValue expected1 = new LuaInt(5);
+			LuaValue expected2 = new LuaInt(8);
+			expectedList.add(expected);
+			expectedList.add(expected1);
+			expectedList.add(expected2);
+			assertEquals(expectedList,ret);
+		//	LuaValue[] vals = {new LuaBoolean(false)};
+			//List<LuaValue> expected = Arrays.asList(vals);
+		//	assertEquals(expected, ret);
+		}
+		@Test
+		void table7() throws Exception{
+			String input = "a=5 x={a=3} return x[a]";
+			show(input);
+			List<LuaValue> ret = interpret(input);
+			show(ret);
+			List<LuaValue> expectedList = new ArrayList<>();
+			LuaValue expected = new LuaInt(3);
+			expectedList.add(expected);
+			assertEquals(expectedList,ret);
+		//	LuaValue[] vals = {new LuaBoolean(false)};
+			//List<LuaValue> expected = Arrays.asList(vals);
+		//	assertEquals(expected, ret);
+		}
+		@Test
+		void table8() throws Exception{
+			String input = "a= {1,3,5} b= {2,4,6} x = {a,b} y= {[j]=b,b} z = {[25]=x, [k]=y} return x[a[1]]";//a= {1,3,5} b= {2,4,6} x = {a,b} y= {[j]=b,b} z = {[25]=x, [k]=y} return z
+			show(input);
+			List<LuaValue> ret = interpret(input);
+			show(ret);
+		}
+		@Test
+		void table9() throws Exception{
+			String input = "a= {2,4,6} x= {a=5} return a, x,x[a]";//a= {1,3,5} b= {2,4,6} x = {a,b} y= {[j]=b,b} z = {[25]=x, [k]=y} return z
+			show(input);
+			List<LuaValue> ret = interpret(input);
+			show(ret);
+		}
+		
+		@Test 
+		void table10() throws Exception{
+			String input = "a= {[k]=34,x=0,12,24} return a[k]-a[1]";
+			show(input);
+			List<LuaValue> ret = interpret(input);
+			show(ret);
+		}
+		
+		@Test
+		void binary2() throws Exception{
+			String input = "return println()";
+			show(input);
+			List<LuaValue> ret = interpret(input);
+			show(ret);
+			
+		}
+		
+		@Test
+		void toNumberTest() throws Exception{
+		String input = "a = toNumber(\"33\"); return a";
+		show(input);
+		List<LuaValue> ret = interpret(input);
+		show(ret);
+		LuaValue[] vals = {new LuaInt(33)};
+		List<LuaValue> expected = Arrays.asList(vals);
+		assertEquals(expected, ret);
+		}
+		
+		@Test
+		void staticAnalysis1() throws Exception {
+			String input = "if true then x=3 goto label1 elseif true then goto label2 else ::label1:: y=20 end ::label2:: z=10";
+			show(input);
+			//List<LuaValue> ret = interpret(input);
+			//show(ret);
+			assertThrows(StaticSemanticException.class,()->{
+				List<LuaValue> ret = interpret(input);
+			});
+		}
 
 }

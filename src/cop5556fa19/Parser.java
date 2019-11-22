@@ -259,6 +259,7 @@ private Exp andExp() throws Exception{
 		}else if(isKind(NAME)) {
 			e0 = new ExpName(t);
 			match(NAME);
+			e0 = prefixTailexp(e0);
 		}
 		else if(isKind(LPAREN)) {
 			match(LPAREN);
@@ -664,6 +665,9 @@ private Exp andExp() throws Exception{
 		}
 		while(isKind(DOT)) {
 			e1 = DotTableLookupBlock(e1);
+		}
+		while(isKind(LSQUARE)) {
+			e1 = TableLookupBlock(e1);
 		}
 		match(RSQUARE);
 		e0 = new ExpTableLookup(first, e0, e1);

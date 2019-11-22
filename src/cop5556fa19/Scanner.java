@@ -730,6 +730,7 @@ public class Scanner {
 				case "true": t = new Token(KW_true,t.text,numPos,lineNo);break;
 				case "until": t = new Token(KW_until,t.text,numPos,lineNo);break;
 				case "while": t = new Token(KW_while,t.text,numPos,lineNo);break;
+				case "goto":  t = new Token(KW_goto, t.text, numPos, lineNo);break;
 				
 			}
 		}
