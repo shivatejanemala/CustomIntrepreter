@@ -80,7 +80,7 @@ public class Scanner {
 					t= new Token(INTLIT,"0",numPos,lineNo);
 						
 				}break;
-				case '\n':case '\t':case '\b':{
+				case '\n':case '\t':case '\b': case '\r':{
 					return getNext();
 				}
 				case '@': {
@@ -97,6 +97,21 @@ public class Scanner {
 						sb = new StringBuilder();
 						return t;
 						}
+					case '\\':{
+						numPos+=1;
+						a = testString.charAt(numPos);
+						switch(a) {
+						case 'n': case 'r':case 't':case 'f': {
+							if(Character.compare('n', a)==0) {lineNo+=1;}
+							t= getNext();
+							kind = Kind.START;
+							sb = new StringBuilder();
+							return t;
+							}
+						}
+						
+					
+					}
 					default: {
 						kind = Kind.START;
 						throw new LexicalException("Invalid line terminator : \\"+a+"found at numPos: "+numPos+" and LineNo: "+lineNo);
@@ -211,6 +226,7 @@ public class Scanner {
 				case '\'':{
 					kind = Kind.STRINGLIT;
 					params.append('\'');
+					sb.append("\'");
 					t= getNext();
 					break;
 					}
@@ -443,6 +459,7 @@ public class Scanner {
 						throw new LexicalException("Invalid Number of quotes in the input");
 					}
 					kind = Kind.START;
+					sb.append('\'');
 					t = new Token(STRINGLIT,sb.toString(),numPos,lineNo);
 				}
 				else if(Character.compare('\\', a)==0) { //ESCAPE SEQ for string literal

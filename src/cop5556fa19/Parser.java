@@ -66,7 +66,6 @@ public class Parser {
 	class SyntaxException extends Exception {
 		Token t;
 		
-		
 		public SyntaxException(Token t, String message) {
 			super(t.line + ":" + t.pos + " " + message);
 		}
@@ -336,14 +335,19 @@ private Exp andExp() throws Exception{
 			fieldexp  = new FieldExpKey(first, e0, e1);
 		}
 		else if(isKind(NAME)) {
-			match(NAME);
-			if(isKind(ASSIGN)) {
-				match(ASSIGN);
-				e0 = exp();
-			 fieldexp = new FieldNameKey(first, new Name(first, first.text), e0);	
+			e0 = exp();
+			if(e0 instanceof ExpName) {
+				if(isKind(ASSIGN)) {
+					match(ASSIGN);
+					e1 = exp();
+					fieldexp = new FieldNameKey(first, new Name(first, ((ExpName)e0).name), e1);	
+				}
+				else{
+					fieldexp = new FieldImplicitKey(first,e0);
+				}	
 			}
 			else{
-				fieldexp = new FieldImplicitKey(first,new ExpName(first));
+				fieldexp = new FieldImplicitKey(first,(e0!=null)? e0 : new ExpName(first));
 			}
 					
 		}
@@ -450,7 +454,8 @@ private Exp andExp() throws Exception{
 				if(e0!=null) {
 					statementlist.add(e0); 
 				}	
-			}
+				
+		}
 		while(isKind(KW_return)) {
 			if(returnAchieved) {
 				throw new SyntaxException(t, "More than one return statement encountered");
@@ -469,7 +474,6 @@ private Exp andExp() throws Exception{
 	private Stat returnBlock() throws Exception{
 		Stat e0 = null;
 		Token first = t;
-		
 		try {
 			match(KW_return);
 			boolean returnAchieved = false;
@@ -529,7 +533,7 @@ private Exp andExp() throws Exception{
 				case KW_function:{
 					e0 = functionBlock();
 				}
-				case NAME : case LPAREN:{
+				case NAME : case LCURLY: case LPAREN : {
 					List<Exp>nameList = varListBlock();
 					if(isKind(ASSIGN)) {
 						match(ASSIGN);
@@ -807,6 +811,7 @@ private Exp andExp() throws Exception{
 			while(isKind(DOT) || isKind(LPAREN) || isKind(COLON) || isKind(LSQUARE) || isKind(LCURLY) || isKind(STRINGLIT)) {
 				e0 = prefixTailexp(e0);
 			}
+			
 			expList.add(e0);
 		}
 		while(isKind(COMMA)) {

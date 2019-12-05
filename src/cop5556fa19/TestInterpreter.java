@@ -631,5 +631,15 @@ import interpreter.StaticSemanticException;
 				List<LuaValue> ret = interpret(input);
 			});
 		}
-
+		
+		@Test
+		void errorResolve1() throws Exception{
+			String input = "return 1~2 | 3 & 4";
+			show(input);
+			List<LuaValue> ret = interpret(input);
+			show(ret);
+			/*LuaValue[] vals = {new LuaInt(33)};
+			List<LuaValue> expected = Arrays.asList(vals);
+			assertEquals(expected, ret);*/
+		}
 }

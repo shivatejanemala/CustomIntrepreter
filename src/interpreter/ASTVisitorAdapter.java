@@ -494,7 +494,7 @@ public abstract class ASTVisitorAdapter implements ASTVisitor {
 					valueList.add(expValue);
 					expValue = ((JavaFunction)((LuaTable)arg).get("toNumber")).call(valueList).get(0);
 				}
-				value = new LuaInt(((LuaInt)expValue).v);
+				value = new LuaInt(-((LuaInt)expValue).v);
 				break;
 			}
 		}
